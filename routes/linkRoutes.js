@@ -14,37 +14,36 @@ function isValidUrl(str) {
 
 // Create short URL
 router.post('/shorten', async (req, res) => {
-  const { url, customCode } = req.body;
+  const { url } = req.body;
   if (!url || !isValidUrl(url)) {
     return res.status(400).json({ error: 'Invalid URL' });
   }
 
   try {
-    if (!customCode) {
-      const existing = await Link.findOne({ originalUrl: url });
-      if (existing) {
-        return res.json({ shortCode: existing.shortCode });
-      }
+    let link = await Link.findOne({ originalUrl: url });
+    if (link) {
+      return res.json({ shortCode: link.shortCode });
     }
 
-    let shortCode = customCode;
-
-    if (customCode) {
-      const codeInUse = await Link.findOne({ shortCode: customCode });
-      if (codeInUse) {
-        return res.status(409).json({ error: 'Custom code already exists' });
-      }
-    } else {
-      shortCode = nanoid(Math.floor(Math.random() * 2) + 6);
-    }
-
-    const link = new Link({ originalUrl: url, shortCode });
+    const shortCode = nanoid(7);
+    link = new Link({ originalUrl: url, shortCode });
     await link.save();
-
     res.json({ shortCode });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get all links for admin dashboard
+router.get('/links', async (req, res) => {
+  try {
+    const links = await Link.find({}, 'originalUrl shortCode clicks createdAt')
+      .sort({ createdAt: -1 });
+    res.status(200).json(links);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
