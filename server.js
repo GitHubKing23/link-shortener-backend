@@ -4,7 +4,8 @@ const cors = require('cors');
 require('dotenv').config();
 
 const linkRoutes = require('./routes/linkRoutes');
-const Link = require('./models/Link'); // Needed for redirect logic
+const adminRoutes = require('./routes/adminRoutes'); // ⬅️ Added admin routes
+const Link = require('./models/Link'); // For redirect logic
 
 const app = express();
 app.use(cors());
@@ -18,10 +19,11 @@ mongoose.connect(MONGO_URI)
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
 
-// API routes (for shortening and admin dashboard)
+// API routes
 app.use('/api', linkRoutes);
+app.use('/api/admin', adminRoutes); // ⬅️ Mount admin routes here
 
-// Redirect handler for short links
+// Redirect short codes
 app.get('/:code', async (req, res) => {
   try {
     const link = await Link.findOne({ shortCode: req.params.code });
